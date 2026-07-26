@@ -375,8 +375,14 @@ function buildGameScreen(
   /* input: drag to scroll, tap to travel */
   let down: { id: number; x: number; y: number; scroll: number; moved: boolean } | null = null;
 
+  // No canvas.setPointerCapture here on purpose: on iOS Safari a captured touch
+  // that is then cancelled (a system edge gesture, an accidental second finger)
+  // can leave the canvas unable to receive ANY further pointer events for the rest
+  // of the round — the reported "I tapped a spot and then couldn't move for the
+  // rest of the game" (the host clock keeps auto-playing your turns meanwhile).
+  // Tap-to-move needs no capture: the canvas fills the stage, so a press stays on
+  // it, and each new pointerdown replaces any stale gesture below.
   const onDown = (e: PointerEvent): void => {
-    canvas.setPointerCapture(e.pointerId);
     down = { id: e.pointerId, x: e.clientX, y: e.clientY, scroll: view.scrollY, moved: false };
   };
   const onMove = (e: PointerEvent): void => {
