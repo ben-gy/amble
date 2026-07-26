@@ -48,7 +48,7 @@ import {
   type ViewState,
 } from './render';
 import { runCountdown } from './countdown';
-import { aboutSheetHtml, helpSheetHtml, innMenuHtml, type ResultRow, resultsHtml, standingsHtml } from './ui';
+import { aboutSheetHtml, helpSheetHtml, holdingsHtml, innMenuHtml, type ResultRow, resultsHtml, standingsHtml } from './ui';
 
 const SLUG = 'amble';
 const store = createStore(SLUG);
@@ -360,7 +360,9 @@ function buildGameScreen(
     const secs = Math.ceil(m.msLeft / 1000);
     clockEl.textContent = m.state.over || m.selfSeat === null ? '' : `${secs}s`;
     clockEl.classList.toggle('urgent', secs <= 8);
-    underEl.innerHTML = standingsHtml(m.state, m.selfSeat, opts.roster);
+    underEl.innerHTML =
+      (m.selfSeat !== null ? holdingsHtml(m.state, m.selfSeat) : '') +
+      standingsHtml(m.state, m.selfSeat, opts.roster);
   }
 
   function turnLabel(): string {

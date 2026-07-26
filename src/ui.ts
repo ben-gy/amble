@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Ben Richardson
 // Amble — DOM UI: help, about, the inn menu, live standings, results.
 
-import { type Dish, type GameState, scoreAll } from './game';
+import { type Dish, type GameState, scoreAll, SOUV_KINDS } from './game';
 import { SEAT_COLOUR, SEAT_NAME } from './palette';
 
 const esc = (s: string): string =>
@@ -60,6 +60,41 @@ export function innMenuHtml(menu: Dish[], taken: boolean[], eaten: number[]): st
     })
     .join('');
   return `<div class="inn-menu"><p class="inn-title">Choose a dish</p>${rows}</div>`;
+}
+
+/**
+ * What the local traveller is holding, right now — a compact strip above the
+ * standings so you can actually strategise (reported via feedback: the totals
+ * were visible but not your own collection). Shows your deepest view, souvenir
+ * spread, springs, meals, and — the number that drives every route decision —
+ * how many open-road claims you have left before the road ends.
+ */
+export function holdingsHtml(game: GameState, seat: number): string {
+  const p = game.players[seat];
+  const bd = scoreAll(game)[seat];
+  const claimsLeft = Math.max(0, game.budget - p.claims);
+
+  // Colour the view dot by your DEEPEST panorama — the one that actually scores.
+  let bestView = -1;
+  let bestDepth = 0;
+  p.vista.forEach((d, i) => {
+    if (d > bestDepth) {
+      bestDepth = d;
+      bestView = i;
+    }
+  });
+  const viewCol = ['var(--sea)', 'var(--hill)', 'var(--dusk)'][bestView] ?? 'var(--panel-deep)';
+
+  const chip = (col: string, label: string, val: string, title: string): string =>
+    `<span class="hold" title="${esc(title)}"><span class="hold-dot" style="background:${col}"></span>${label}&nbsp;${val}</span>`;
+
+  return `<div class="holdings" aria-label="What you have collected so far">
+    ${chip(viewCol, 'View', bestDepth > 0 ? `depth ${bestDepth}` : '—', 'Your deepest panorama — only your single deepest view scores, so commit to one')}
+    ${chip('var(--market)', 'Souvenirs', `${bd.distinctSouv}/${SOUV_KINDS}`, 'Distinct souvenir kinds you hold — a spread pays, hoarding one does not')}
+    ${chip('var(--spring)', 'Springs', String(p.springs), 'Springs soaked — the traveller with the most takes a bonus')}
+    ${chip('var(--inn)', 'Meals', String(bd.distinctDish), 'Dishes eaten at inns')}
+    <span class="hold hold-claims" title="Open-road stops you can still claim before the road ends">${claimsLeft} claim${claimsLeft === 1 ? '' : 's'} left</span>
+  </div>`;
 }
 
 /** A compact live standings strip: each traveller, projected score, what they lead. */
